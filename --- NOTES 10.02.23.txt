@@ -1,0 +1,127 @@
+1. Currently, the template file defines the data model. 
+This is wrong. Need the model to be in code, and template
+just renders it. In code, lots can be done e.g., validation.
+
+2. Put the model in views.py:
+
+from django import forms
+class NewTaskForm(forms.Form):
+    task = forms.CharField(label="New Task")
+
+2b. views.py/add method:
+    return render(request, "tasks/add.html", {"form": NewTaskForm()})
+
+2c. add.html:
+    <form action="{% url 'tasks:add' %}" method="post">
+        {% csrf_token %}
+        {{ form }}
+        <input type="submit">
+    </form>
+
+2d. Beauty is that we can add more data to form from the code that deals with it.
+class NewTaskForm(forms.Form):
+    task = forms.CharField(label="New Task")
+    # priority = forms.IntegerField(label="Priority", min_value=1, max_value=5)
+
+3. Show client-side validation.
+
+4. Better structure to move forms into forms.py. 
+from django import forms
+class NewTaskForm(forms.Form):
+...
+
+4b. In views.py:
+from .forms import NewTaskForm
+
+5. Let's add to the task list (finally):
+
+def add(request):
+    if request.method == "POST":
+        task = request.POST["task"]
+        tasks.append(task)
+        return render(request, "tasks/index.html", {"tasks":tasks})
+    return render(request, "tasks/add.html", {"form": NewTaskForm()})
+
+=> wrong. on the return,, refresh page. see that the URL is "add". refresh blows up. need to redirect
+=> can use HttpResponseRedirect or redirect()
+
+from django.http import HttpResponseRedirect
+from django.urls import reverse
+#from django.shortcuts import render, redirect
+
+def add(request):
+    if request.method == "POST":
+        task = request.POST["task"]
+        tasks.append(task)
+        #return HttpResponseRedirect(reverse("tasks:index"))
+        #return render(request, "tasks/index.html", {"tasks":tasks})
+    return render(request, "tasks/add.html", {"form": NewTaskForm()})
+
+problems:
+  1. form might not be valid (SHOW THIS - change min len on task)
+  2. need to get clean data - e.g., date field as a data object, not as string
+
+solution: form = NewTaskForm(request.POST) - binds data from the POST and does validation,
+storing error messages per field, per form as needed
+
+def add(request):
+    if request.method == "POST":
+        form = NewTaskForm(request.POST)
+        if form.is_valid():
+            task = form.cleaned_data["task"]
+            tasks.append(task)
+            return render(request, "tasks/index.html", {"tasks":tasks})
+        else:
+            return render(request, "tasks/add.html", {"form": form})
+
+    return render(request, "tasks/add.html", {"form": NewTaskForm()})
+
+7. Can add more interesting validation that has to be done on server using
+our business logic.
+
+=> server-side validation on semantic (e.g., description too short when pri > 5)
+    # this function will be used for the validation
+    def clean(self):
+        super(NewTaskForm, self).clean()
+
+        task = self.cleaned_data.get('task')
+        priority = self.cleaned_data.get('priority')
+ 
+        # conditions to be met for the task length
+        if priority > 5 and len(task)<10:
+            self._errors['task'] = self.error_class([
+                'Minimum 10 characters required wen priority > 5'])
+
+        # return any errors if found
+        return self.cleaned_data
+
+8. What about preventing duplications of a task? Form cannot do this!
+
+def add(request):
+  if request.method == "POST":
+    form = NewTaskForm(request.POST)
+    if form.is_valid():
+      task = form.cleaned_data["task"]
+      pri = form_cleaned_data["priority"]
+
+      if task not in tasks:
+        tasks.append([task])
+        return redirect("tasks:index")
+      else:
+        return render(request, "tasks/add.html",{"form": form, "errormsg": "Task must be unique"})
+    else:
+      return render(request, "tasks/add.html",{"form": form})
+  return render(request,"tasks/add.html", {"form": NewTaskForm()})
+
+add.html:
+    {% if errormsg %}
+        <p class="error">{{ errormsg }}</p>
+    {% endif %}
+
+layout.html:
+    <style>
+        .error { 
+            color:red;
+            font-weight: bold;
+        }
+    </style>

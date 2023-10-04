@@ -1,0 +1,167 @@
+Review of classtoday:
+in app:
+- urls.py are routes it will process
+- views.py are the request processors (just index.html)
+- templates/classtoday/index.html
+- static/classtoday/styles.css
+register app to project:
+- added it in project/settings.py
+- added to project/urls.py routes owned by app
+
+
+1. create tastks app - in APPS, don't put it last!
+
+1a) python manage.py startapp tasks
+
+1b) demoproject/settings.py: add task to INSTALLED_APPS
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    "hello",
+    "classtoday",
+    "tasks"
+]
+
+1c) demoproject/urls.py (note that it is NOT last):
+urlpatterns = [
+    path("tasks/", include("tasks.urls")),
+    path('admin/', admin.site.urls),
+    path("hello/", include("hello.urls")),
+    path("classtoday/", include("classtoday.urls")),
+]
+
+
+1d) tasks/urls.py:
+from django.urls import path
+from . import views
+urlpatterns = [
+    path("", views.index, name="index"),
+]
+
+
+2. tasks/views.py
+tasks = ['foo', 'bar', 'bazinga', 'fun']
+def index(request):
+    return render(request, "tasks/index.html", {
+        "tasks": tasks
+    })
+
+3. template/tasks/index.html:
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Tasks</title>
+    </head>
+    <body>
+        <p>{{ tasks }}</p>
+    </body>
+</html>
+
+
+3b. Improve on display v1:
+
+    <h1>Tasks</h1>
+    <ul>
+        {% for task in tasks %}
+            <li>{{ task }}</li>
+        {% endfor %}
+    </ul>
+
+ 
+4. build the add method:
+
+4a) views.py:
+def add(request):
+    return render(request, "tasks/add.html")
+
+4b) urls.py:
+    path("add-task", views.add, name="add"),
+]
+****************************************************
+
+4c) add.html:
+
+    <title>Tasks</title>
+    <h1>Add Task</h1>
+    <form>
+        <input type="text" name="t" >
+        <input type="submit">
+    </form>
+
+
+5. improve looks of add.html:
+    head:
+        <link rel="stylesheet" href="https://cdn.simplecss.org/simple.css">
+    body:
+        <footer>
+        <p> Copyright 2023 by UAA 490</p>
+        </footer>
+        
+5b. Would like to apply the same style to the index page as well; rather than
+copy-and-paste, use  template inheritance.
+
+teamplates/layout.html:
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Tasks</title>
+    </head>
+    <body>
+        {% block body %}
+        {% endblock %}
+    </body>
+</html>
+
+template/index.html and templates/add.html
+{% extends "tasks/layout.html" %}
+
+{% block body %}
+    ...
+    stuff
+    ...
+{% endblock %}
+
+6. add links on index.html:
+
+<p>
+    <a href="add-task">add a new tasks</a>
+    <a href="/tasks/add-task">add a new tasks</a>
+
+</p>
+
+
+having the URL "add" is fine...
+<p>
+<a href="{% url 'add' %}">Add a new task</a>
+</p>
+
+SHOW CODE HERE. 
+
+and on add page:
+<p>
+<a href="{% url 'index' %}">View Tasks</a>
+</p>
+
+7. name clash with "index" 
+in urls.py:
+
+app_name = "tasks"
+urlpatterns = [...]
+
+in index.html, add.html:
+<a href="{% url 'tasks:index' %}">View Task</a>
+
+
+8. Viewing the add page, adding action to the form in add.html:
+<form action="{% url 'tasks:add' %}" method="post">  
+
+9. CSRF error
+- need to add a token
+- middleware; look at settings.py
+{% csrf_token %}
+
+Look at page source code.
