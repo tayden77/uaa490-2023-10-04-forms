@@ -11,6 +11,7 @@ tasks = ['eat', 'sleep', 'pray'
 def index(request):
     return render(request, 'tasks/index.html', {
         'tasks': sorted(tasks),
+        'msg': messages
     })
 
 
@@ -34,4 +35,20 @@ def add(request):
         return render(request, "tasks/add.html", {"form": NewTaskForm()})
 
 def delete(request):
-    return render(request, "tasks/delete.html", {"form": NewTaskForm()})
+    if request.method == "DELETE":
+        f = NewTaskForm(request.DELETE)
+        if f.is_valid():
+            task = f.cleaned_data["task"]
+            priority = f.cleaned_data["priority"]
+            if task in tasks:
+                tasks.remove(task)
+                messages.success(request, f'Task {task} removed.')
+                return redirect('tasks:index')
+            else:
+                messages.error(request, f'This task does not exist')
+                return redirect('tasks:index')
+
+        else:
+            return render(request, 'tasks/delete.html', {"form": f})
+    else:
+        return render(request, "tasks/delete.html", {"form": NewTaskForm()})

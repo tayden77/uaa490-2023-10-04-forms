@@ -5,7 +5,7 @@
     {% if errormessage %}
         <p class="error">{{ errormessage }}</p>
     {% endif %} 
-    <form action="{% url 'tasks:delete' %}" method="post">
+    <form action="{% url 'tasks:delete' %}" method="DELETE">
         {% csrf_token %}
         {{ form }}
         <input type="submit">
