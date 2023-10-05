@@ -5,4 +5,6 @@ app_name = "tasks"
 urlpatterns = [
     path('', views.index, name="index"),
     path('add-task/', views.add, name="add"),
+    path('delete-task/', views.delete, name="delete"),
+
 ]
