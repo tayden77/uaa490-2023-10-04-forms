@@ -33,11 +33,10 @@ def delete(request):
         f = TaskNameForm(request.POST)
         if f.is_valid():
             task = f.cleaned_data["task"]
-            if task in request.session['tasks']:
-                request.session['tasks'].remove(task)
-                request.session.modified = True
-                messages.success(request, f'Task {task} removed.')
-                return redirect('tasks:index')
+            d = Task.objects.get(title=task)
+            if d is not None:
+                d.delete()
+                messages.success(request, f'Task {task} added.')
             else:
                 messages.error(request, f'This task does not exist')
                 return redirect('tasks:index')
