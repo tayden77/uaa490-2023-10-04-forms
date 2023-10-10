@@ -12,22 +12,6 @@ def index(request):
         'msg': messages
     })
 
-
-def add(request):
-    if request.method == "POST":
-        f = NewTaskForm(request.POST)
-        if f.is_valid():
-            task = f.cleaned_data["task"]
-            priority = f.cleaned_data["priority"]
-            t = Task(title=task, priority=priority)
-            t.save()
-            messages.success(request, f'Task {task} added.')
-            return redirect('tasks:index')
-        else:
-            return render(request, 'tasks/add.html', {"form": f})
-    else:
-        return render(request, "tasks/add.html", {"form": NewTaskForm()})
-
 def delete(request):
     if request.method == "POST":
         f = TaskNameForm(request.POST)
