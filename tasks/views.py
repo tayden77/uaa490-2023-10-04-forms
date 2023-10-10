@@ -3,15 +3,12 @@ from .forms import NewTaskForm, TaskNameForm
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.contrib import messages
-
-
+from .models import Task
 
 
 def index(request):
-    if 'tasks' not in request.session:
-        request.session['tasks'] = []
     return render(request, 'tasks/index.html', {
-        'tasks': sorted(request.session['tasks']),
+        'tasks': sorted(Task.objects.all()),
         'msg': messages
     })
 
@@ -22,15 +19,10 @@ def add(request):
         if f.is_valid():
             task = f.cleaned_data["task"]
             priority = f.cleaned_data["priority"]
-            if task not in request.session['tasks']:
-                #request.session['tasks'] += [task]
-                request.session['tasks'].append(task)
-                request.session.modified = True
-                messages.success(request, f'Task {task} added.')
-                return redirect('tasks:index')
-            else:
-                messages.error(request, f'Duplicate tasks are not allowed')
-                return redirect('tasks:index')
+            t = Task(title=task, priority=priority)
+            t.save()
+            messages.success(request, f'Task {task} added.')
+            return redirect('tasks:index')
         else:
             return render(request, 'tasks/add.html', {"form": f})
     else:
