@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from .forms import NewTaskForm, TaskNameForm, TaskForm
+from .forms import TaskNameForm, TaskForm
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.contrib import messages
